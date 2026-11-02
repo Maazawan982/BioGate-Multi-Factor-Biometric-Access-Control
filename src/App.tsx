@@ -25,6 +25,7 @@ import { SecuritySettingsPage } from './components/dashboard/SecuritySettingsPag
 import { ProfileSettingsPage } from './components/dashboard/ProfileSettingsPage';
 import { HelpSupportPage } from './components/dashboard/HelpSupportPage';
 import { ViewDetailsModal } from './components/dashboard/ViewDetailsModal';
+import { UnauthorizedDomainModal } from './components/UnauthorizedDomainModal';
 import { LayoutDashboard, ArrowRight, ShieldCheck } from 'lucide-react';
 
 import {
@@ -47,6 +48,8 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
+  const [isUnauthorizedModalOpen, setIsUnauthorizedModalOpen] = useState(false);
+  const [unauthorizedDomain, setUnauthorizedDomain] = useState('');
 
   // Auth & Reset States
   const [resetEmail, setResetEmail] = useState<string>('name@example.com');
@@ -98,7 +101,11 @@ export default function App() {
       setViewMode('dashboard');
       showNotification(`Signed in as ${user.displayName || user.email}! Welcome to TriShield.`);
     } catch (error: any) {
-      if (error?.code !== 'auth/popup-closed-by-user') {
+      if (error?.code === 'auth/unauthorized-domain') {
+        const domain = error?.domain || (typeof window !== 'undefined' ? window.location.hostname : 'your Vercel domain');
+        setUnauthorizedDomain(domain);
+        setIsUnauthorizedModalOpen(true);
+      } else if (error?.code !== 'auth/popup-closed-by-user') {
         showNotification(error?.message || 'Unable to authenticate with Google.', 'Sign In Failed', 'error');
       }
     } finally {
@@ -324,6 +331,23 @@ export default function App() {
       <ViewDetailsModal
         activity={selectedActivity}
         onClose={() => setSelectedActivity(null)}
+      />
+
+      {/* Unauthorized Domain Helper Modal for Vercel */}
+      <UnauthorizedDomainModal
+        isOpen={isUnauthorizedModalOpen}
+        onClose={() => setIsUnauthorizedModalOpen(false)}
+        domain={unauthorizedDomain}
+        onContinueDemo={() => {
+          setCurrentUser({
+            uid: 'officer_demo',
+            displayName: 'Security Officer (Demo)',
+            email: 'officer@trishield.security',
+            photoURL: null,
+          });
+          setViewMode('dashboard');
+          showNotification('Signed in as Demo Security Officer.');
+        }}
       />
 
       {/* Event Notification Toast */}

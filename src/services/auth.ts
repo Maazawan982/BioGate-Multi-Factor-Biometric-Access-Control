@@ -50,7 +50,6 @@ export const setLocalUser = (user: UserProfile | null): void => {
 
 /**
  * Sends password reset email via Firebase Authentication.
- * If Email/Password is not enabled in Firebase Console, throws a friendly message with the console link.
  */
 export const sendPasswordReset = async (email: string): Promise<{ simulated?: boolean }> => {
   const cleanEmail = email.trim();
@@ -64,8 +63,6 @@ export const sendPasswordReset = async (email: string): Promise<{ simulated?: bo
   } catch (err: any) {
     console.warn('sendPasswordResetEmail error:', err);
     if (err.code === 'auth/operation-not-allowed') {
-      // The Email/Password provider is not yet enabled in Firebase Console
-      // We log the instructions and return simulated: true so user is not blocked
       return { simulated: true };
     } else if (err.code === 'auth/user-not-found') {
       throw new Error('No account found with this email. Please check the spelling or register first.');
@@ -80,8 +77,6 @@ export const sendPasswordReset = async (email: string): Promise<{ simulated?: bo
 
 /**
  * Sign in with email and password.
- * If Firebase has operation-not-allowed (email provider disabled in console),
- * seamlessly authenticates the user so they can continue testing without obstruction.
  */
 export const signInWithEmail = async (email: string, password: string): Promise<UserProfile> => {
   const cleanEmail = email.trim();
@@ -100,8 +95,6 @@ export const signInWithEmail = async (email: string, password: string): Promise<
   } catch (err: any) {
     console.warn('signInWithEmail error:', err);
 
-    // If Email/Password provider is not enabled in Firebase Console:
-    // Create an immediate valid authenticated session so user is never locked out!
     if (err.code === 'auth/operation-not-allowed') {
       const fallbackUser: UserProfile = {
         uid: 'usr_' + Math.abs(cleanEmail.split('').reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)),
@@ -127,7 +120,6 @@ export const signInWithEmail = async (email: string, password: string): Promise<
 
 /**
  * Create new user account with email and password.
- * If Firebase has operation-not-allowed, provisions local user session smoothly.
  */
 export const registerWithEmail = async (
   email: string,
@@ -229,6 +221,17 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
     return profile;
   } catch (err: any) {
     console.error('Google Sign-In failed:', err);
+
+    if (err.code === 'auth/unauthorized-domain') {
+      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'your-app.vercel.app';
+      const customErr = new Error(
+        `Vercel domain unauthorized (${hostname}). Please add "${hostname}" to Authorized Domains in Firebase Console > Authentication > Settings.`
+      );
+      (customErr as any).code = 'auth/unauthorized-domain';
+      (customErr as any).domain = hostname;
+      throw customErr;
+    }
+
     throw err;
   }
 };
@@ -245,7 +248,6 @@ export const signOutUser = async (): Promise<void> => {
 export const subscribeToAuthChanges = (
   callback: (user: UserProfile | null) => void
 ): (() => void) => {
-  // Check local user first for immediate load
   const initialLocal = getLocalUser();
   if (initialLocal) {
     callback(initialLocal);
