@@ -1,0 +1,38 @@
+{
+  "entities": {
+    "users": {
+      "title": "User Profile",
+      "description": "User profile data authenticated via Google or email",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The unique Firebase Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User full display name"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "User avatar image URL"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was initialized"
+        }
+      },
+      "required": ["userId", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "users",
+      "description": "Private user profile collection accessible only by the owner"
+    }
+  }
+}

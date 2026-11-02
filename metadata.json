@@ -1,0 +1,6 @@
+{
+  "name": "BioGate — TriShield Biometric Access Control",
+  "description": "Multi-factor biometric access control authentication interface for TriShield, featuring secure multi-step authentication, password strength analysis, and cybersecurity compliance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
